@@ -156,6 +156,26 @@ class GPUSpecsDatabase:
             compute_capability='8.9'
         ),
         
+        # NVIDIA L4 (Ada Lovelace)
+        'L4': GPUSpecs(
+            name='L4',
+            peak_fp16_tflops=181.0,  # From delay factor file
+            memory_bandwidth_gb_s=864.0,  # GDDR6
+            sm_count=142,
+            cuda_cores_per_sm=128,
+            memory_size_gb=24,  # Standard L4 memory
+            compute_capability='8.9'
+        ),
+        'NVIDIA L4': GPUSpecs(
+            name='L4',
+            peak_fp16_tflops=181.0,
+            memory_bandwidth_gb_s=864.0,
+            sm_count=142,
+            cuda_cores_per_sm=128,
+            memory_size_gb=24,
+            compute_capability='8.9'
+        ),
+        
         # NVIDIA V100 (for reference)
         'V100': GPUSpecs(
             name='V100',
@@ -245,6 +265,7 @@ class GPUSpecsDatabase:
         gpu_patterns = {
             't4': 'T4',
             'tesla_t4': 'Tesla T4',
+            'l4': 'L4',  # NVIDIA L4
             'a10g': 'A10G', 
             'l40s': 'L40S',
             'l40': 'L40S',  # Handle L40/L40S variations

@@ -13,10 +13,11 @@ from typing import List, Dict, Tuple
 # GPU별 현실적인 모델 조합 (메모리 제약 고려)
 GPU_MODEL_COMBINATIONS = {
     'T4': ['LLaMA_3.2_1B'],  # 16GB - 작은 모델만
-    'A10G': ['LLaMA_3.2_1B', 'LLaMA_3_8B'],  # 24GB - 중간 모델까지  
-    'L40S': ['LLaMA_3_8B', 'LLaMA_3_70B'],  # 48GB - 큰 모델까지
-    'A100': ['LLaMA_3_8B', 'LLaMA_3_70B'],  # 40GB - 큰 모델까지
-    'A100-SXM4-80GB': ['LLaMA_3_70B']  # 80GB - 가장 큰 모델 전용
+    'L4': ['LLaMA_3.2_1B', 'LLaMA_3_8B', 'LLaMA_3.1_8B'],  # 24GB - 중간 모델까지
+    'A10G': ['LLaMA_3.2_1B', 'LLaMA_3_8B', 'LLaMA_3.1_8B'],  # 24GB - 중간 모델까지  
+    'L40S': ['LLaMA_3_8B', 'LLaMA_3.1_8B', 'LLaMA_3_70B'],  # 48GB - 큰 모델까지
+    'A100': ['LLaMA_3_8B', 'LLaMA_3.1_8B', 'LLaMA_3_70B'],  # 40GB - 큰 모델까지
+    'A100-SXM4-80GB': ['LLaMA_3.1_8B', 'LLaMA_3_70B']  # 80GB - 가장 큰 모델 전용
 }
 
 # 입력/출력 길이 시나리오

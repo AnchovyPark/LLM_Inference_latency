@@ -179,11 +179,22 @@ def main():
     print("🔧 예측기 초기화 중...")
     predictor = LLMLatencyPredictor()
     
-    # 시나리오 파일들
-    scenario_files = [
-        ('balanced_scenarios.csv', 'balanced_predictions.csv'),
-        ('random_scenarios.csv', 'random_predictions.csv')
-    ]
+    # 명령행 인수 확인
+    import sys
+    if len(sys.argv) > 1:
+        # 특정 시나리오 파일 처리
+        scenario_file = sys.argv[1]
+        if not scenario_file.endswith('.csv'):
+            scenario_file += '.csv'
+        
+        output_file = scenario_file.replace('.csv', '_predictions.csv')
+        scenario_files = [(scenario_file, output_file)]
+    else:
+        # 기본 시나리오 파일들
+        scenario_files = [
+            ('balanced_scenarios.csv', 'balanced_predictions.csv'),
+            ('random_scenarios.csv', 'random_predictions.csv')
+        ]
     
     for scenario_file, output_file in scenario_files:
         print(f"\n📋 {scenario_file} 처리 중...")
@@ -203,7 +214,7 @@ def main():
             analyze_predictions(predictions)
             
         except FileNotFoundError:
-            print(f"⚠️  {scenario_file}을 찾을 수 없습니다. 먼저 generate_scenarios.py를 실행하세요.")
+            print(f"⚠️  {scenario_file}을 찾을 수 없습니다. 파일명을 확인하세요.")
         except Exception as e:
             print(f"❌ {scenario_file} 처리 중 오류 발생: {e}")
     

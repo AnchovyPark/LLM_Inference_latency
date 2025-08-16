@@ -80,6 +80,8 @@ class DelayFactorManager:
             'A100-SXM4-80GB': 'A100_80G',
             'Tesla T4': 'T4',
             'T4': 'T4',
+            'L4': 'L4',  # NVIDIA L4
+            'NVIDIA L4': 'L4',
             'A10G': 'A10G',
             'L40S': 'L40s',  # Note: L40s with lowercase 's' in filename
             'L40s': 'L40s'
@@ -88,13 +90,18 @@ class DelayFactorManager:
         # Map GPU name to delay factor filename
         file_gpu_name = gpu_file_mapping.get(gpu_name, gpu_name)
         
-        # Try to load memory-corrected version first
+        # Try to load memory-corrected version first, then regular version, then basic DF file
         corrected_file = f'/Users/anchovy-mac/Desktop/calculating/data/{file_gpu_name}_DF_memory_corrected.json'
         fallback_file = f'/Users/anchovy-mac/Desktop/calculating/data/{file_gpu_name}_DF_corrected.json'
+        basic_file = f'/Users/anchovy-mac/Desktop/calculating/data/{file_gpu_name}_DF.json'
         
-        file_to_load = corrected_file if os.path.exists(corrected_file) else fallback_file
-        
-        if not os.path.exists(file_to_load):
+        if os.path.exists(corrected_file):
+            file_to_load = corrected_file
+        elif os.path.exists(fallback_file):
+            file_to_load = fallback_file
+        elif os.path.exists(basic_file):
+            file_to_load = basic_file
+        else:
             raise FileNotFoundError(f"No delay factor file found for GPU: {gpu_name} (tried {file_gpu_name})")
         
         with open(file_to_load, 'r') as f:
@@ -184,6 +191,16 @@ class LLMLatencyPredictor:
                 num_key_value_heads=8,
                 head_dim=128,
                 num_layers=80,
+                vocab_size=128256
+            ),
+            'LLaMA_3.1_8B': ModelConfig(
+                name='LLaMA_3.1_8B',
+                hidden_size=4096,
+                intermediate_size=14336,
+                num_attention_heads=32,
+                num_key_value_heads=8,
+                head_dim=128,
+                num_layers=32,
                 vocab_size=128256
             )
         }
@@ -412,7 +429,7 @@ def get_supported_info():
     friendly_gpus = [gpu_mapping.get(gpu, gpu) for gpu in available_gpus]
     
     # Available models
-    available_models = ['LLaMA_3.2_1B', 'LLaMA_3_8B', 'LLaMA_3_70B']
+    available_models = ['LLaMA_3.2_1B', 'LLaMA_3_8B', 'LLaMA_3.1_8B', 'LLaMA_3_70B']
     
     return friendly_gpus, available_models
 
@@ -459,7 +476,8 @@ def print_help_with_info():
     print()
     print("📝 MODEL ALIASES:")
     print("  • 1b, llama_3_2_1b, llama_3.2_1b → LLaMA_3.2_1B")
-    print("  • 8b, llama_3_8b, llama_3.8b → LLaMA_3_8B") 
+    print("  • 8b, llama_3_8b, llama_3.8b → LLaMA_3_8B")
+    print("  • 3.1_8b, llama_3.1_8b, llama_3_1_8b → LLaMA_3.1_8B")
     print("  • 70b, llama_3_70b, llama_3.70b → LLaMA_3_70B")
     print()
     print("🖥️  GPU ALIASES:")
@@ -577,6 +595,9 @@ if __name__ == "__main__":
             'llama_3.2_1b': 'LLaMA_3.2_1B',
             'llama_3_8b': 'LLaMA_3_8B',
             'llama_3.8b': 'LLaMA_3_8B',
+            'llama_3.1_8b': 'LLaMA_3.1_8B',
+            'llama_3_1_8b': 'LLaMA_3.1_8B',
+            '3.1_8b': 'LLaMA_3.1_8B',
             'llama_3_70b': 'LLaMA_3_70B',
             'llama_3.70b': 'LLaMA_3_70B',
             '1b': 'LLaMA_3.2_1B',
