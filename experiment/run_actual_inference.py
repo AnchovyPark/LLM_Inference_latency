@@ -31,36 +31,37 @@ class ActualInferenceRunner:
             raise RuntimeError("CUDA GPU가 필요합니다!")
         
         self.device = torch.device('cuda')
-        print(f"🖥️  사용 중인 GPU: {torch.cuda.get_device_name()}")
-        print(f"💾 GPU 메모리: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+        print(f"  사용 중인 GPU: {torch.cuda.get_device_name()}")
+        print(f" GPU 메모리: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
     
     def load_model(self, model_name: str) -> bool:
         """모델 로드 (필요시에만)"""
         
         if self.current_model_name == model_name:
-            print(f"✅ {model_name} 이미 로드됨 (재사용)")
+            print(f" {model_name} 이미 로드됨 (재사용)")
             return True
         
         # 기존 모델 메모리 해제
         if self.current_model is not None:
-            print(f"🗑️  기존 모델 ({self.current_model_name}) 메모리 해제")
+            print(f"  기존 모델 ({self.current_model_name}) 메모리 해제")
             del self.current_model
             del self.current_tokenizer
             torch.cuda.empty_cache()
             gc.collect()
         
-        print(f"🔄 {model_name} 모델 로딩 중...")
+        print(f" {model_name} 모델 로딩 중...")
         
         try:
             # 모델명 매핑 (로컬 경로도 지원)
             model_paths = {
                 'LLaMA_3.2_1B': 'meta-llama/Llama-3.2-1B-Instruct',
-                'LLaMA_3_8B': 'meta-llama/Llama-3-8B-Instruct', 
+                'LLaMA_3_8B': 'meta-llama/Llama-3-8B-Instruct',
+                'LLaMA_3.1_8B': 'meta-llama/Llama-3.1-8B-Instruct',
                 'LLaMA_3_70B': 'meta-llama/Llama-3-70B-Instruct'
             }
             
             if model_name not in model_paths:
-                print(f"❌ 지원하지 않는 모델: {model_name}")
+                print(f" 지원하지 않는 모델: {model_name}")
                 return False
             
             model_path = model_paths[model_name]
@@ -70,7 +71,7 @@ class ActualInferenceRunner:
             import torch
             
             # 토크나이저 로드
-            print(f"  📝 토크나이저 로딩...")
+            print(f" 토크나이저 로딩...")
             self.current_tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
             if self.current_tokenizer.pad_token is None:
                 self.current_tokenizer.pad_token = self.current_tokenizer.eos_token
@@ -78,14 +79,14 @@ class ActualInferenceRunner:
             # 현재 GPU 메모리 확인
             memory_free = torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated()
             memory_free_gb = memory_free / 1e9
-            print(f"  💾 사용 가능한 GPU 메모리: {memory_free_gb:.1f} GB")
+            print(f" 사용 가능한 GPU 메모리: {memory_free_gb:.1f} GB")
             
             # 모델 로드 (GPU 메모리에 맞춰 설정)
-            print(f"  🤖 모델 로딩...")
+            print(f" 모델 로딩...")
             if '70B' in model_name:
                 # 70B 모델: 메모리 최적화 필요
                 if memory_free_gb < 40:  # 40GB 미만이면 8bit 로딩
-                    print(f"  ⚡ 8bit 양자화 로딩 (메모리 절약)")
+                    print(f"  8bit 양자화 로딩 (메모리 절약)")
                     self.current_model = AutoModelForCausalLM.from_pretrained(
                         model_path,
                         torch_dtype=torch.float16,
@@ -103,7 +104,7 @@ class ActualInferenceRunner:
             elif '8B' in model_name:
                 # 8B 모델: 대부분 GPU에서 fp16 가능
                 if memory_free_gb < 16:
-                    print(f"  ⚡ 8bit 양자화 로딩 (메모리 절약)")
+                    print(f" 8bit 양자화 로딩 (메모리 절약)")
                     self.current_model = AutoModelForCausalLM.from_pretrained(
                         model_path,
                         torch_dtype=torch.float16,
@@ -128,17 +129,17 @@ class ActualInferenceRunner:
                 )
             
             self.current_model_name = model_name
-            print(f"✅ {model_name} 로딩 완료")
+            print(f" {model_name} 로딩 완료")
             
             # 메모리 사용량 출력
             memory_used = torch.cuda.memory_allocated() / 1e9
             memory_total = torch.cuda.get_device_properties(0).total_memory / 1e9
-            print(f"📊 GPU 메모리 사용량: {memory_used:.1f}/{memory_total:.1f} GB ({memory_used/memory_total*100:.1f}%)")
+            print(f" GPU 메모리 사용량: {memory_used:.1f}/{memory_total:.1f} GB ({memory_used/memory_total*100:.1f}%)")
             
             return True
             
         except Exception as e:
-            print(f"❌ 모델 로딩 실패: {e}")
+            print(f" 모델 로딩 실패: {e}")
             return False
     
     def measure_inference_time(self, input_text: str, max_new_tokens: int, batch_size: int = 1) -> Dict:
@@ -258,29 +259,17 @@ def load_scenarios(csv_file: str) -> List[Dict]:
 
 
 def generate_input_text(length: int) -> str:
-    """지정된 토큰 길이의 입력 텍스트 생성"""
+    """지정된 토큰 길이의 입력 텍스트 생성 (단순 반복)"""
     
-    # 다양한 도메인의 텍스트 템플릿
-    templates = [
-        "Please analyze the following data and provide insights: " + "data point, " * (length // 3),
-        "Write a comprehensive report about artificial intelligence covering: " + "topic, " * (length // 3),  
-        "Explain the concept of machine learning including: " + "algorithm, " * (length // 3),
-        "Generate code documentation for the following functions: " + "function(), " * (length // 3)
-    ]
+    # 단순한 반복 텍스트 생성 (latency는 내용과 무관하므로)
+    # "a" 문자를 반복하여 대략적인 토큰 길이 맞춤
+    base_word = "a"
     
-    # 길이에 맞는 텍스트 선택 및 조정
-    import random
-    base_text = random.choice(templates)
+    # 대략 토큰당 1-2개 문자로 추정하여 생성
+    # 실제로는 토크나이저가 정확히 계산하지만, 대략적으로 맞춤
+    repeated_text = base_word * (length * 2)  # 여유있게 생성
     
-    # 길이 조정
-    words = base_text.split()
-    if len(words) > length:
-        return ' '.join(words[:length])
-    else:
-        # 길이가 부족하면 반복으로 채움
-        while len(words) < length:
-            words.extend(words[:min(50, length - len(words))])
-        return ' '.join(words[:length])
+    return repeated_text
 
 
 def filter_scenarios_by_current_gpu(scenarios: List[Dict]) -> List[Dict]:
@@ -443,8 +432,7 @@ def main():
         
         # 시나리오 파일 선택
         scenario_files = [
-            ('balanced_scenarios.csv', 'balanced_actual_measurements.csv'),
-            ('random_scenarios.csv', 'random_actual_measurements.csv')
+            ('length_combination_scenarios.csv', 'length_combination_measurements.csv')
         ]
         
         for scenario_file, output_file in scenario_files:
